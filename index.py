@@ -1,9 +1,29 @@
 from textual.app import App, ComposeResult
+from textual.widgets import LoadingIndicator
+import threading
+
+class LoadingApp(App):
+  def compose(self) -> ComposeResult:
+    yield LoadingIndicator()
+
+app = None
+app_thread = None
+if __name__ == "__main__":
+  app = LoadingApp()
+  app_thread = threading.Thread(
+    target=app.run,
+    daemon=True
+  )
+  app_thread.start()
+
+
 from textual.binding import Binding
 from textual.containers import Container, Horizontal, Vertical
 from textual.widgets import Header, Footer, Static, ContentSwitcher, Sparkline, Label, ListItem, ListView
+
 from charts import Chart, candlestick
 from trader_client import trading_client, portfolio_history, candle_data
+
 
 class TheApp(App):
   CSS_PATH = "style.tcss"
@@ -106,5 +126,8 @@ class TheApp(App):
 
 
 if __name__ == "__main__":
+  app.exit()
+  app_thread.join()
+
   app = TheApp()
   app.run()
