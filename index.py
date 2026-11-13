@@ -3,7 +3,7 @@ from textual.binding import Binding
 from textual.containers import Container, Grid, Horizontal, Vertical
 from textual.widgets import Header, Footer, Static, ContentSwitcher, Sparkline, Label, ListItem, ListView, Rule
 from charts import Chart, candlestick, linechart
-from trader_client import trading_client
+from trader_client import trading_client, portfolio_history
 
 import random
 
@@ -57,7 +57,7 @@ class TheApp(App):
                   yield Label("  :::::      ::::   ")
                   yield Label("     ::      ::     ")
               yield Label("[b]Balance[/b][dim] - [i]Last 24h[/i][/dim]", classes="w-full text-center")
-              yield Sparkline([random.randrange(0, 2000) for _ in range(24)], summary_function=max, classes="h-full")
+              yield Sparkline(portfolio_history.equity, summary_function=max, classes="h-full")
 
             with Container(id="stock-chart", classes="with-border h-full"):
               yield Label("[b]AAPL[/b] [dim]Apple - [i]Current price: $123.45[/i][/dim]", classes="w-full text-center")
