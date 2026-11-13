@@ -1,20 +1,22 @@
+import threading
 from textual.app import App, ComposeResult
 from textual.widgets import LoadingIndicator
-import threading
+
+print("\033[H\033[J", end="")
 
 class LoadingApp(App):
   def compose(self) -> ComposeResult:
     yield LoadingIndicator()
 
-app = None
-app_thread = None
+loading_app = None
+loading_app_thread = None
 if __name__ == "__main__":
-  app = LoadingApp()
-  app_thread = threading.Thread(
-    target=app.run,
+  loading_app = LoadingApp()
+  loading_app_thread = threading.Thread(
+    target=loading_app.run,
     daemon=True
   )
-  app_thread.start()
+  loading_app_thread.start()
 
 
 from textual.binding import Binding
@@ -145,8 +147,7 @@ class TheApp(App):
 
 
 if __name__ == "__main__":
-  app.exit()
-  app_thread.join()
-
   app = TheApp()
+  loading_app.exit()
+  loading_app_thread.join()
   app.run()
