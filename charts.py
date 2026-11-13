@@ -17,9 +17,11 @@ plt.add_theme(
 
 class Chart(Static):
   ALLOW_SELECT = False
+  data = None
 
-  def __init__(self, get_chart_str, *args, **kwargs):
+  def __init__(self, data, get_chart_str, *args, **kwargs):
     super().__init__(*args, **kwargs)
+    self.data = data
     self.str_fn = get_chart_str
 
   def on_mount(self):
@@ -29,10 +31,21 @@ class Chart(Static):
     self.refresh_chart()
 
   def refresh_chart(self):
+    if self.data == None:
+      return
+
     width = self.size.width
     height = self.size.height
 
-    output = self.str_fn(width, height)
+    data = {'date': [], 'open': [], 'close': [], 'high': [], 'low': []}
+    for item in self.data[-(width // 2 - 3):]:
+      data['date'].append(item.timestamp)
+      data['open'].append(item.open)
+      data['close'].append(item.close)
+      data['high'].append(item.high)
+      data['low'].append(item.low)
+
+    output = self.str_fn(data, width, height)
     self.update(output)
 
 def __random_candlestick_data(size: int):
