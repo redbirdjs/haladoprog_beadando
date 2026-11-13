@@ -4,8 +4,6 @@ from rich.text import Text
 from textual.widgets import Static
 from datetime import datetime, timedelta
 
-from trader_client import candle_data
-
 plt.add_theme(
   "__default__",
   canvas="default",
@@ -63,15 +61,6 @@ def __random_candlestick_data(size: int):
 def candlestick(data: dict | None, width: int, height: int) -> str:
   if data == None:
     data = __random_candlestick_data(width // 3)
-
-  data = {'date': [], 'open': [], 'close': [], 'high': [], 'low': []}
-
-  for item in candle_data["NVDA"][-(width // 3):]:
-    data['date'].append(item.timestamp)
-    data['open'].append(item.open)
-    data['close'].append(item.close)
-    data['high'].append(item.high)
-    data['low'].append(item.low)
 
   fig = plt.figure
   fig.clear()

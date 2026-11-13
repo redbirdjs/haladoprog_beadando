@@ -1,11 +1,9 @@
 from textual.app import App, ComposeResult
 from textual.binding import Binding
-from textual.containers import Container, Grid, Horizontal, Vertical
-from textual.widgets import Header, Footer, Static, ContentSwitcher, Sparkline, Label, ListItem, ListView, Rule
-from charts import Chart, candlestick, linechart
-from trader_client import trading_client, portfolio_history
-
-import random
+from textual.containers import Container, Horizontal, Vertical
+from textual.widgets import Header, Footer, Static, ContentSwitcher, Sparkline, Label, ListItem, ListView
+from charts import Chart, candlestick
+from trader_client import trading_client, portfolio_history, candle_data
 
 class TheApp(App):
   CSS_PATH = "style.tcss"
@@ -56,32 +54,29 @@ class TheApp(App):
                   yield Label(" ::::::      :::::: ")
                   yield Label("  :::::      ::::   ")
                   yield Label("     ::      ::     ")
-              yield Label("[b]Balance[/b][dim] - [i]Last 24h[/i][/dim]", classes="w-full text-center")
+              yield Label(f"[b]Balance[/b][dim] - [i]Last 24h[/i][/dim]", classes="w-full text-center")
               yield Sparkline(portfolio_history.equity, summary_function=max, classes="h-full")
 
-            with Container(id="stock-chart", classes="with-border h-full"):
-              yield Label("[b]AAPL[/b] [dim]Apple - [i]Current price: $123.45[/i][/dim]", classes="w-full text-center")
-              
-              def update_chart(w, h):
-                return candlestick(data=None, width=w, height=h)
-              
-              yield Chart(classes="h-full", get_chart_str=update_chart)
+            with Container(id="stock-chart-container", classes="with-border h-full"):
+              yield Label(id="stock-title", classes="w-full text-center", content="")
+              yield Chart(id="stock-chart", classes="h-full", data=None, get_chart_str=candlestick)
           
           with Vertical(id="right", classes="ml-1"):
-            # yield Chart(classes="with-border h-full", get_chart_str=linechart)
             items = []
             for item in self.assets:
               items.append(
                 ListItem(
                   Horizontal(
-                    Label(f"[b]{item['symbol']}[/b] [dim]{item['name']}[/dim]", classes="w-full"),
-                    Label(f"▲ ${item['current_price']}", classes="value up")
-                  )
+                    Label(f"[b]{item['symbol'].ljust(4, " ")}[/b] [dim]{item['name']}[/dim]", classes="w-full"),
+                    Label(f"▲ ${float(item['current_price']):.2f}", classes="value up")
+                  ),
+                  id=item['symbol']
                 )
               )
 
             yield ListView(
               *items,
+              id="stock-list",
               classes="with-border h-full"
             )
 
@@ -95,6 +90,19 @@ class TheApp(App):
   def action_switch_content(self, page_name: str) -> None:
     self.query_one(ContentSwitcher).current = page_name
     self.sub_title = page_name.title()
+
+  def on_list_view_highlighted(self, event: ListView.Highlighted) -> None:
+    if event.list_view.id != "stock-list":
+      return
+
+    title = self.query_one("#stock-title")
+    asset = next((x for x in self.assets if x["symbol"] == event.item.id), None)
+    title.content = f"[b]{asset['symbol']}[/b] [dim]{asset['name']} - [i]Current price: ${asset['current_price']}[/i][/dim]"
+
+    chart = self.query_one("#stock-chart")
+    chart.data = candle_data[event.item.id]
+
+    chart.refresh_chart()
 
 
 if __name__ == "__main__":
