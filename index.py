@@ -25,6 +25,20 @@ from charts import Chart, candlestick
 from trader_client import trading_client, portfolio_history, candle_data
 
 
+indicator = {
+  'up': '▲',
+  'down': '▼',
+  '': '—'
+}
+
+def get_trend(current: float, previous: float):
+  if current > previous:
+    return 'up'
+  if current < previous:
+    return 'down'
+  return ''
+
+
 class TheApp(App):
   CSS_PATH = "style.tcss"
   BINDINGS = [
@@ -63,7 +77,8 @@ class TheApp(App):
                   yield Label("Name")
                   with Horizontal():
                     yield Label("Portfolio value: ")
-                    yield Label(f"▲ ${float(self.account.portfolio_value):.2f}", classes="value up")
+                    trend = get_trend(float(self.account.portfolio_value), float(portfolio_history.equity[0]))
+                    yield Label(f"{indicator[trend]} [b]${float(self.account.portfolio_value):.2f}[/b]", classes=f"value {trend}".strip())
                 with Vertical(classes="w-auto mr-1"):
                   yield Label("      ::::::::      ")
                   yield Label("   ::::::::::::::   ")
@@ -85,11 +100,14 @@ class TheApp(App):
           with Vertical(id="right", classes="ml-1"):
             items = []
             for item in self.assets:
+              data = candle_data[item['symbol']]
+              trend = get_trend(float(data[-1].close), float(data[-1].open))
+
               items.append(
                 ListItem(
                   Horizontal(
                     Label(f"[b]{item['symbol'].ljust(4, " ")}[/b] [dim]{item['name']}[/dim]\n     [dim]Quantity: [/dim]{item['quantity']}", classes="w-full"),
-                    Label(f"▲ ${float(item['current_price']):.2f}", classes="value up")
+                    Label(f"{indicator[trend]} ${float(item['current_price']):.2f}", classes=f"value {trend}".strip())
                   ),
                   id=item['symbol']
                 )
