@@ -3,6 +3,7 @@ from textual.binding import Binding
 from textual.containers import Container, Grid, Horizontal, Vertical
 from textual.widgets import Header, Footer, Static, ContentSwitcher, Sparkline, Label, ListItem, ListView, Rule
 from charts import Chart, candlestick, linechart
+from trader_client import trading_client
 
 import random
 
@@ -13,6 +14,19 @@ class TheApp(App):
     Binding(key="f2", action="switch_content('something')", description="Something"),
     Binding(key="q", action="quit", description="Quit"),
   ]
+
+  account = trading_client.get_account()
+  portfolio = trading_client.get_all_positions()
+  assets = []
+
+  for item in portfolio:
+    data = trading_client.get_asset(item.symbol)
+    
+    assets.append({
+      "symbol": item.symbol,
+      "name": data.name,
+      "current_price": item.current_price
+    })
 
   def compose(self) -> ComposeResult:
     yield Header()
@@ -29,8 +43,8 @@ class TheApp(App):
                 with Vertical(classes="w-full ml-1"):
                   yield Label("Name")
                   with Horizontal():
-                    yield Label("Balance: ")
-                    yield Label(f"▲ ${24535.4:.2f}", classes="value up")
+                    yield Label("Portfolio value: ")
+                    yield Label(f"▲ ${float(self.account.portfolio_value):.2f}", classes="value up")
                 with Vertical(classes="w-auto mr-1"):
                   yield Label("      ::::::::      ")
                   yield Label("   ::::::::::::::   ")
@@ -47,41 +61,27 @@ class TheApp(App):
 
             with Container(id="stock-chart", classes="with-border h-full"):
               yield Label("[b]AAPL[/b] [dim]Apple - [i]Current price: $123.45[/i][/dim]", classes="w-full text-center")
-              yield Chart(classes="h-full", get_chart_str=candlestick)
+              
+              def update_chart(w, h):
+                return candlestick(data=None, width=w, height=h)
+              
+              yield Chart(classes="h-full", get_chart_str=update_chart)
           
           with Vertical(id="right", classes="ml-1"):
             # yield Chart(classes="with-border h-full", get_chart_str=linechart)
+            items = []
+            for item in self.assets:
+              items.append(
+                ListItem(
+                  Horizontal(
+                    Label(f"[b]{item['symbol']}[/b] [dim]{item['name']}[/dim]", classes="w-full"),
+                    Label(f"▲ ${item['current_price']}", classes="value up")
+                  )
+                )
+              )
+
             yield ListView(
-              ListItem(
-                Horizontal(
-                  Label("[b]AAPL[/b] [dim]Apple[/dim]", classes="w-full"),
-                  Label(f"▲ ${235.4:.2f}", classes="value up")
-                )
-              ),
-              ListItem(
-                Horizontal(
-                  Label("[b]MSFT[/b] [dim]Microsoft[/dim]", classes="w-full"),
-                  Label(f"▼ ${235.4:.2f}", classes="value down")
-                )
-              ),
-              ListItem(
-                Horizontal(
-                  Label("[b]NVDA[/b] [dim]NVIDIA[/dim]", classes="w-full"),
-                  Label(f"▼ ${300:.2f}", classes="value down")
-                )
-              ),
-              ListItem(
-                Horizontal(
-                  Label("[b]AMZN[/b] [dim]Amazon[/dim]", classes="w-full"),
-                  Label(f"▲ ${300:.2f}", classes="value up")
-                )
-              ),
-              ListItem(
-                Horizontal(
-                  Label("[b]TSLA[/b] [dim]Tesla[/dim]", classes="w-full"),
-                  Label(f"▼ ${300:.2f}", classes="value down")
-                )
-              ),
+              *items,
               classes="with-border h-full"
             )
 
