@@ -4,7 +4,7 @@ from rich.text import Text
 from textual.widgets import Static
 from datetime import datetime, timedelta
 
-from trader_client import bars
+from trader_client import candle_data
 
 plt.add_theme(
   "__default__",
@@ -53,7 +53,7 @@ def candlestick(data: dict | None, width: int, height: int) -> str:
 
   data = {'date': [], 'open': [], 'close': [], 'high': [], 'low': []}
 
-  for item in bars["AAPL"][-(width // 3):]:
+  for item in candle_data["NVDA"][-(width // 3):]:
     data['date'].append(item.timestamp)
     data['open'].append(item.open)
     data['close'].append(item.close)
