@@ -31,5 +31,3 @@ request_params = StockBarsRequest(
 )
 
 candle_data = request_client.get_stock_bars(request_params)
-
-print(portfolio_history)
