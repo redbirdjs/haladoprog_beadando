@@ -21,7 +21,7 @@ if __name__ == "__main__":
 
 from textual.binding import Binding
 from textual.containers import Container, Horizontal, Vertical
-from textual.widgets import Header, Footer, Static, ContentSwitcher, Sparkline, Label, ListItem, ListView
+from textual.widgets import Header, Footer, Static, ContentSwitcher, Sparkline, Label, ListItem, ListView, Button
 
 from charts import Chart, candlestick
 from trader_client import trading_client, portfolio_history, candle_data
@@ -77,10 +77,12 @@ class TheApp(App):
               with Horizontal():
                 with Vertical(classes="w-full ml-1"):
                   yield Label("Name")
-                  with Horizontal():
+                  with Horizontal(classes="h-auto"):
                     yield Label("Portfolio value: ")
                     trend = get_trend(float(self.account.portfolio_value), float(portfolio_history.equity[0]))
                     yield Label(f"{indicator[trend]} [b]${float(self.account.portfolio_value):.2f}[/b]", classes=f"value {trend}".strip())
+                  with Horizontal():
+                    yield Button("AI Assistant", variant="primary", flat=True)
                 with Vertical(classes="w-auto mr-1"):
                   yield Label("      ::::::::      ")
                   yield Label("   ::::::::::::::   ")
