@@ -43,7 +43,8 @@ class TheApp(App):
     assets.append({
       "symbol": item.symbol,
       "name": data.name,
-      "current_price": item.current_price
+      "current_price": item.current_price,
+      "quantity": item.qty
     })
 
   def compose(self) -> ComposeResult:
@@ -87,7 +88,7 @@ class TheApp(App):
               items.append(
                 ListItem(
                   Horizontal(
-                    Label(f"[b]{item['symbol'].ljust(4, " ")}[/b] [dim]{item['name']}[/dim]", classes="w-full"),
+                    Label(f"[b]{item['symbol'].ljust(4, " ")}[/b] [dim]{item['name']}[/dim]\n     [dim]Quantity: [/dim]{item['quantity']}", classes="w-full"),
                     Label(f"▲ ${float(item['current_price']):.2f}", classes="value up")
                   ),
                   id=item['symbol']

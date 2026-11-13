@@ -49,7 +49,7 @@
 
 #home #right ListView > ListItem {
   padding: 1 2;
-  height: 3;
+  height: 4;
   width: 1fr;
 }
 
