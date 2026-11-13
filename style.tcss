@@ -1,0 +1,60 @@
+.h-full {
+  height: 1fr;
+}
+
+.w-full {
+  width: 1fr;
+}
+
+.w-auto {
+  width: auto;
+}
+
+.mr-1 {
+  margin-right: 1;
+}
+
+.ml-1 {
+  margin-left: 1;
+}
+
+.with-border {
+  border: round white 50%;
+}
+
+.text-center {
+  text-align: center;
+}
+
+
+.sparkline--max-color {
+    color: $success;
+}
+.sparkline--min-color {
+    color: $error 50%;
+}
+
+
+.value.up {
+  color: $success;
+}
+.value.down {
+  color: $error;
+}
+
+
+#home #right ListView {
+  background: transparent;
+}
+
+#home #right ListView > ListItem {
+  padding: 1 2;
+  height: 3;
+  width: 1fr;
+}
+
+#home #right ListView > ListItem.-highlight {
+  text-style: bold;
+  color: $foreground;
+  background: $panel;
+}
