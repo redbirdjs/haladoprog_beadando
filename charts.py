@@ -4,6 +4,8 @@ from rich.text import Text
 from textual.widgets import Static
 from datetime import datetime, timedelta
 
+from trader_client import bars
+
 plt.add_theme(
   "__default__",
   canvas="default",
@@ -14,23 +16,24 @@ plt.add_theme(
 
 
 class Chart(Static):
+  ALLOW_SELECT = False
+
   def __init__(self, get_chart_str, *args, **kwargs):
     super().__init__(*args, **kwargs)
     self.str_fn = get_chart_str
 
   def on_mount(self):
-    self.refresh_chart(None)
+    self.refresh_chart()
 
   def on_resize(self):
-    self.refresh_chart(None)
+    self.refresh_chart()
 
-  def refresh_chart(self, data: dict | None):
+  def refresh_chart(self):
     width = self.size.width
     height = self.size.height
 
-    output = self.str_fn(data, width, height)
+    output = self.str_fn(width, height)
     self.update(output)
-
 
 def __random_candlestick_data(size: int):
   data = {'date': [], 'open': [], 'close': [], 'high': [], 'low': []}
@@ -47,6 +50,15 @@ def __random_candlestick_data(size: int):
 def candlestick(data: dict | None, width: int, height: int) -> str:
   if data == None:
     data = __random_candlestick_data(width // 3)
+
+  data = {'date': [], 'open': [], 'close': [], 'high': [], 'low': []}
+
+  for item in bars["AAPL"][-(width // 3):]:
+    data['date'].append(item.timestamp)
+    data['open'].append(item.open)
+    data['close'].append(item.close)
+    data['high'].append(item.high)
+    data['low'].append(item.low)
 
   fig = plt.figure
   fig.clear()
