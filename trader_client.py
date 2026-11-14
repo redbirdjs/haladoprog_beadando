@@ -27,7 +27,9 @@ symbols = [item.symbol for item in trading_client.get_all_positions()]
 request_params = StockBarsRequest(
     symbol_or_symbols=symbols,
     timeframe=TimeFrame.Minute,
-    start=datetime.now(timezone.utc).replace(hour=9, minute=30, second=0, microsecond=0)
+    start=datetime(datetime.now().year, datetime.now().month, datetime.now().day)
 )
 
 candle_data = request_client.get_stock_bars(request_params)
+
+print(candle_data)
