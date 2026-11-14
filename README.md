@@ -1,3 +1,3 @@
 ```
-pip install plotext rich textual alpaca-py
+pip install plotext rich textual alpaca-py transformers
 ```
