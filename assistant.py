@@ -13,13 +13,8 @@ model = AutoModelForCausalLM.from_pretrained(
 )
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 
-agent = """
-You are an expert Portfolio Agent connected to the user's trading account.
-Your job is to analyze the user's current portfolio positions, buying power, recent martket performance, news.
-Propose exactly 5 actionable trade recommendations for the user to choose from.
-You have to give back the five recommendations in an array of objects. The objects must follow the Alpaca API Order placing format.
+SYSTEM_PROMPT = """
 
-There is no need to write any text ONLY give back the array with the objects.
 """
 
 prompt = f"""
@@ -28,7 +23,7 @@ Here is my portfolio in Alpaca Positions format:
 {trading_client.get_all_positions()}
 """
 messages = [
-    {"role": "system", "content": agent},
+    {"role": "system", "content": SYSTEM_PROMPT},
     {"role": "user", "content": prompt}
 ]
 text = tokenizer.apply_chat_template(
