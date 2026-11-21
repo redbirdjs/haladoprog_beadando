@@ -24,7 +24,7 @@ from textual.containers import Container, Horizontal, Vertical
 from textual.widgets import Header, Footer, Static, ContentSwitcher, Sparkline, Label, ListItem, ListView, Button
 
 from charts import Chart, candlestick
-from trader_client import trading_client, portfolio_history, candle_data
+from trader_client import trading_client, portfolio_history, candle_data, market_data
 
 
 indicator = {
@@ -76,13 +76,15 @@ class TheApp(App):
             with Container(id="profile", classes="with-border h-full"):
               with Horizontal():
                 with Vertical(classes="w-full ml-1"):
-                  yield Label("Name")
+                  yield Label(f"Account number: {self.account.account_number}")
                   with Horizontal(classes="h-auto"):
                     yield Label("Portfolio value: ")
                     trend = get_trend(float(self.account.portfolio_value), float(portfolio_history.equity[0]))
                     yield Label(f"{indicator[trend]} [b]${float(self.account.portfolio_value):.2f}[/b]", classes=f"value {trend}".strip())
                   with Horizontal():
                     yield Button("AI Assistant", variant="primary", flat=True)
+                  with Horizontal():
+                    yield Label(f"The market is currently {'open!' if market_data.is_open else '[u]closed![/u]'}")
                 with Vertical(classes="w-auto mr-1"):
                   yield Label("      ::::::::      ")
                   yield Label("   ::::::::::::::   ")
