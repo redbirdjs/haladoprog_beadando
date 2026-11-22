@@ -1,5 +1,9 @@
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from trader_client import trading_client
+from alpaca.trading.enums import OrderSide, TimeInForce
+from alpaca.trading.requests import OrderRequest
+import json
+import re
 
 # Agent létrehozva
 # TODO: agent és prompt pontosítása, hogy csak a szükséges adatokat adja vissza az AI
@@ -22,12 +26,13 @@ You are an autonomous algorithmic trading decision agent. Your job is to analyze
    - Evaluate each existing position against recent news and momentum.
    - Generate `sell` orders for holdings facing negative catalysts, deteriorating fundamentals, or overextended rallies where taking profit is prudent. Never sell more `qty` than the user currently owns.
    - Generate `buy` orders to average down on fundamentally strong dips, add to winners with fresh positive catalysts, or diversify sector risk.
+   - Only give `buy` orders if there is enough buying power!
 3. **If Portfolio IS Empty (`[]`):**
    - Identify high-conviction, profitable stock opportunities backed by strong recent news catalysts, earnings momentum, or favorable sector trends.
    - Generate `buy` orders only, sizing `qty` reasonably based on the provided `buying_power` (or conservative 1-10 share starter positions if cash balance is omitted).
 
 ### STRICT OUTPUT RULES
-- Return **ONLY** a valid JSON array matching the exact schema below. Do not include markdown formatting (no ```json), explanations, or extra text.
+- Return **ONLY** a valid JSON array matching the exact schema below. DO NOT INCLUDE markdown formatting, explanations, or extra text.
 - Generate a **maximum of 5 actions** (0 to 5 items). If no good trades exist, return `[]`.
 - `symbol`: Valid uppercase stock ticker (e.g., `"NVDA"`, `"AAPL"`).
 - `qty`: Positive number representing share quantity.
@@ -48,8 +53,9 @@ You are an autonomous algorithmic trading decision agent. Your job is to analyze
 """
 
 prompt = f"""
-I have no available buying power.
-Here is my portfolio in Alpaca Positions format:
+The current buying power is 0$.
+If my buying power can't afford the stocks, give me some sell options!
+My portfolio positions are the following:
 {trading_client.get_all_positions()}
 """
 messages = [
@@ -73,4 +79,32 @@ generated_ids = [
 
 response = tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
 
-print(response)
+markdown_cleaned = re.sub(r"^```(?:json)?\s*|\s*```$", "", response.strip(), flags=re.IGNORECASE)
+suggestions_list = json.loads(markdown_cleaned)
+
+print(suggestions_list)
+print(len(suggestions_list))
+
+def getTimeInForce(tif):
+    if (tif == 'gtc'): 
+        return TimeInForce.GTC
+    if (tif == 'otg'): 
+        return TimeInForce.OPG
+    if (tif == 'cls'): 
+        return TimeInForce.CLS
+    if (tif == 'ioc'):
+        return TimeInForce.IOC
+    if (tif == 'fok'):
+        return TimeInForce.FOK
+
+    return TimeInForce.DAY
+
+for item in suggestions_list:
+    data = OrderRequest(
+        type="market",
+        symbol=item['symbol'],
+        qty=item['qty'],
+        side=OrderSide.BUY if item['side'] == 'buy' else OrderSide.SELL,
+        time_in_force=getTimeInForce(item['time_in_force'])
+    )
+    print(data)
