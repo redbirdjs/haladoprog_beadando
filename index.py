@@ -68,7 +68,7 @@ class TheApp(App):
     yield Footer()
 
     with ContentSwitcher(initial="home"):
-      # First Content
+      # Home
       with Container(id="home"):
         with Horizontal(classes="horizontal-main"):
           
@@ -82,7 +82,7 @@ class TheApp(App):
                     trend = get_trend(float(self.account.portfolio_value), float(portfolio_history.equity[0]))
                     yield Label(f"{indicator[trend]} [b]${float(self.account.portfolio_value):.2f}[/b]", classes=f"value {trend}".strip())
                   with Horizontal():
-                    yield Button("AI Assistant", variant="primary", flat=True)
+                    yield Button("AI Assistant", id="ai_assistant_button", variant="primary", flat=True)
                   with Horizontal():
                     yield Label(f"The market is currently {'open!' if market_data.is_open else '[u]closed![/u]'}")
                 with Vertical(classes="w-auto mr-1"):
@@ -104,38 +104,46 @@ class TheApp(App):
               yield Chart(id="stock-chart", classes="h-full", data=None, get_chart_str=candlestick)
           
           with Vertical(id="right", classes="ml-1"):
-            items = []
-            for item in self.assets:
-              data = candle_data[item['symbol']]
-              trend = get_trend(float(data[-1].close), float(data[-1].open))
+            yield ListView(id="stock-list", classes="with-border h-full")
 
-              items.append(
-                ListItem(
-                  Horizontal(
-                    Label(f"[b]{item['symbol'].ljust(4, " ")}[/b] [dim]{item['name']}[/dim]\n     [dim]Quantity: [/dim]{item['quantity']}", classes="w-full"),
-                    Label(f"{indicator[trend]} ${float(item['current_price']):.2f}", classes=f"value {trend}".strip())
-                  ),
-                  id=item['symbol']
-                )
-              )
-
-            yield ListView(
-              *items,
-              id="stock-list",
-              classes="with-border h-full"
-            )
-
-      # Second Content
-      yield Static("Something", id="something", classes="content_box")
 
   def on_mount(self) -> None:
     self.title = "Mambo App"
     self.sub_title = "Home"
+    self.action_switch_content('home')
 
   def action_switch_content(self, page_name: str) -> None:
     self.query_one(ContentSwitcher).current = page_name
-    self.sub_title = page_name.title()
+    self.sub_title = page_name.replace("_", " ").title()
+    self.run_worker(self.update_page())
 
+  async def update_page(self):
+    page = self.query_one(ContentSwitcher).current
+
+    if page == 'home':
+      list_view = self.query_one("#stock-list", ListView)
+      await list_view.clear()
+
+      for item in self.assets:
+        data = candle_data[item['symbol']]
+        trend = get_trend(float(data[-1].close), float(data[-1].open))
+
+        list_view.append(
+          ListItem(
+            Horizontal(
+              Label(f"[b]{item['symbol'].ljust(4, " ")}[/b] [dim]{item['name']}[/dim]\n     [dim]Quantity: [/dim]{item['quantity']}", classes="w-full"),
+              Label(f"{indicator[trend]} ${float(item['current_price']):.2f}", classes=f"value {trend}".strip())
+            ),
+            id=item['symbol']
+          )
+        )
+      return
+
+
+  def on_button_pressed(self, event: Button.Pressed) -> None:
+    if event.button.id == "ai_assistant_button":
+      self.action_switch_content('ai_assistant')
+      return
   def on_list_view_highlighted(self, event: ListView.Highlighted) -> None:
     if event.list_view.id != "stock-list":
       return
