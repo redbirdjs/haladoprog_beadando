@@ -48,6 +48,7 @@ class TheApp(App):
   BINDINGS = [
     Binding(key="f1", action="switch_content('home')", description="Home"),
     Binding(key="f2", action="switch_content('ai_assistant')", description="AI Assistant"),
+    Binding(key="r", action="refresh_content()", description="Refresh"),
     Binding(key="q", action="quit", description="Quit"),
   ]
 
@@ -105,10 +106,25 @@ class TheApp(App):
             yield ListView(id="stock-list", classes="with-border h-full")
 
       # AI
-      with Container(id="ai_assistant", classes="with-border w-full"):
-        yield SelectionList[int](id="ai-check-list")
-        yield Button("Execute orders", id="ai_assistant_buy_sell", variant="primary", flat=True)
-        yield Button("Re-run", id="ai_assistant_rerun", variant="default", flat=True)
+      with Vertical(id="ai_assistant", classes="with-border w-full h-full"):
+        with Horizontal(classes="h-auto mx-1"):
+          with Vertical(classes="w-full h-auto"):
+            yield Label("AI Ultra Mambo Assistant")
+          with Vertical(classes="w-auto h-auto color-ascii"):
+            yield Label("⠀⠀⠀⢀⣾⣧⠀⠀⠀⢠⣾⣆⠀⠀⠀")
+            yield Label("⠀⠀⠀⣼⣿⣿⣇⠀⠀⣾⣿⣿⡄⠀⠀")
+            yield Label("⠀⠀⢠⣿⣿⣿⣿⣤⣴⣿⣿⣿⡇⠀⠀")
+            yield Label("⠀⠀⢸⣿⡿⠛⠻⣿⣿⡿⡻⣿⡟⠀⠀")
+            yield Label("⠀⠀⢸⣿⣇⡄⢷⣿⣿⡸⠇⣸⣷⠀⠀")
+            yield Label("⠐⣒⣞⢿⣿⣿⣿⣿⣿⣿⣿⣿⠯⠭⣁")
+            yield Label("⠀⠐⠚⠉⠉⣿⣿⣿⣿⣿⠋⠉⠉⠒⠀")
+            yield Label("⠀⠀⠀⠀⣸⣿⣿⣿⣿⣿⡀⠀⠀⠀⠀")
+            yield Label("⠀⠀⠀⣰⣿⣿⣿⣿⣿⣿⡇⠀⠀⠀⠀")
+            yield Label("⠀⠀⢰⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀⠀⠀")
+        yield SelectionList[int](id="ai-check-list", classes="with-border h-auto")
+        with Horizontal(classes="h-auto"):
+          yield Button("Execute orders", id="ai_assistant_buy_sell", variant="primary", flat=True, classes="ml-2")
+          yield Button("Re-run", id="ai_assistant_rerun", variant="default", flat=True, classes="ml-1")
 
   def on_mount(self) -> None:
     self.title = "Mambo App"
@@ -118,69 +134,90 @@ class TheApp(App):
   def action_switch_content(self, page_name: str) -> None:
     self.query_one(ContentSwitcher).current = page_name
     self.sub_title = page_name.replace("_", " ").title()
-    self.call_after_refresh(
-      lambda: self.run_worker(self.update_page(page_name))
-    )
+    self.run_worker(self.update_page(page_name))
+
+  def action_refresh_content(self) -> None:
+    page_name = self.query_one(ContentSwitcher).current
+    self.run_worker(self.update_page(page_name))
 
   async def update_page(self, page):
     if page == 'home':
       list_view = self.query_one("#stock-list", ListView)
       await list_view.clear()
 
-      self.assets = []
-      for item in self.portfolio:
-        data = trading_client.get_asset(item.symbol)
-        
-        self.assets.append({
-          "symbol": item.symbol,
-          "name": data.name,
-          "current_price": item.current_price,
-          "quantity": item.qty
-        })
+      list_view.append(ListItem(Label("Loading...", classes="ml-1"), disabled=True))
 
-      self.account = trading_client.get_account()
-      self.portfolio = trading_client.get_all_positions()
-      self.candle_data = get_candle_chart()
-
-      for item in self.assets:
-        data = self.candle_data[item['symbol']]
-        trend = get_trend(float(data[-1].close), float(data[-1].open))
-
-        list_view.append(
-          ListItem(
-            Horizontal(
-              Label(f"[b]{item['symbol'].ljust(4, " ")}[/b] [dim]{item['name']}[/dim]\n     [dim]Quantity: [/dim]{item['quantity']}", classes="w-full"),
-              Label(f"{indicator[trend]} ${float(item['current_price']):.2f}", classes=f"value {trend}".strip())
-            ),
-            id=item['symbol']
-          )
-        )
+      self.call_after_refresh(lambda: self.update_home_data())
       return
 
     if page == "ai_assistant":
       if len(self.ai_results) > 0:
         return
 
-      self.ai_results = generate_answer()
-      # self.ai_results = [
-      #   {
-      #     "symbol": "string",
-      #     "qty": 0,
-      #     "side": "buy",
-      #     "time_in_force": "day",
-      #     "reason": "string"
-      #   }
-      # ]
-
       selection_list = self.query_one("#ai-check-list", SelectionList)
       selection_list.clear_options()
-
-      for index, item in enumerate(self.ai_results):
-        selection_list.add_option((
-          f"{item['symbol'].ljust(4, " ")} {item['side'].upper()}\tQuantity: {item['qty']}\tReason: {item['reason']}",
-          index
-        ))
+      selection_list.border_title = "The AI is currently generating the options..."
+      
+      self.call_after_refresh(lambda: self.update_ai_answer())
       return
+
+  async def update_home_data(self):
+    list_view = self.query_one("#stock-list", ListView)
+    await list_view.clear()
+
+    self.assets = []
+    for item in self.portfolio:
+      data = trading_client.get_asset(item.symbol)
+      
+      self.assets.append({
+        "symbol": item.symbol,
+        "name": data.name,
+        "current_price": item.current_price,
+        "quantity": item.qty
+      })
+
+    self.account = trading_client.get_account()
+    self.portfolio = trading_client.get_all_positions()
+    self.candle_data = get_candle_chart()
+
+    for item in self.assets:
+      data = self.candle_data[item['symbol']]
+      trend = get_trend(float(data[-1].close), float(data[-1].open))
+
+      list_view.append(
+        ListItem(
+          Horizontal(
+            Label(f"[b]{item['symbol'].ljust(4, " ")}[/b] [dim]{item['name']}[/dim]\n     [dim]Quantity: [/dim]{item['quantity']}", classes="w-full"),
+            Label(f"{indicator[trend]} ${float(item['current_price']):.2f}", classes=f"value {trend}".strip())
+          ),
+          id=item['symbol']
+        )
+      )
+
+  async def update_ai_answer(self):
+    selection_list = self.query_one("#ai-check-list", SelectionList)
+    selection_list.clear_options()
+
+    self.ai_results = generate_answer()
+
+    if len(self.ai_results) == 0:
+      selection_list.border_title = "No results."
+      return
+
+    success_color = self.app.theme_variables["success"]
+    error_color = self.app.theme_variables["error"]
+
+    max_qty_len = max([len(str(x['qty'])) for x in self.ai_results])
+
+    from rich.text import Text
+    for index, item in enumerate(self.ai_results):
+      color = success_color if item['side'] == 'buy' else error_color
+      selection_list.add_option((
+        Text.from_markup(f"[b]{item['symbol'].ljust(4, " ")} [{color}]{item['side'].upper().ljust(4, " ")}[/{color}][/b] {" "*4} [dim]Quantity: [/dim]{str(item['qty']).rjust(max_qty_len, " ")} {" "*4} [dim]Reason: [i]{item['reason']}[/i][/dim]"),
+        index
+      ))
+
+    selection_list.border_title = "Available options"
 
   def on_button_pressed(self, event: Button.Pressed) -> None:
     if event.button.id == "ai_assistant_button":
@@ -189,6 +226,11 @@ class TheApp(App):
 
     if event.button.id == "ai_assistant_buy_sell":
       self.action_buy_sell_stocks()
+      return
+
+    if event.button.id == "ai_assistant_rerun":
+      self.ai_results = []
+      self.action_refresh_content()
       return
 
   def action_buy_sell_stocks(self) -> None:
