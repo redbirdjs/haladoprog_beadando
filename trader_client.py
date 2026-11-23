@@ -6,9 +6,6 @@ from alpaca.data.timeframe import TimeFrame
 
 from datetime import datetime
 
-ai_api = "PKWAOQEXBOB2GQFTQIZRCI32IC"
-ai_secret = "3JxDT5K9oJzrxng8xczK4axLpkJBHxMDQJmZjuj2M6cG"
-
 api_key = "PKFZCASF5ECECARFG374SUUXBD"
 secret_key = "3xRE5SVzfxgFHqE4zehD6ByNw9zCcwkgajKasZjcqJqJ"
 
