@@ -1,4 +1,7 @@
+from unittest import result
+
 from transformers import AutoModelForCausalLM, AutoTokenizer
+from smolagents import CodeAgent, WebSearchTool, VisitWebpageTool, TransformersModel
 from trader_client import trading_client
 import json
 import re
@@ -8,12 +11,13 @@ import re
 
 model_name = "Qwen/Qwen3-4B-Instruct-2507"
 
-model = AutoModelForCausalLM.from_pretrained(
+model = TransformersModel(
     model_name,
     torch_dtype="auto",
     device_map="auto"
 )
-tokenizer = AutoTokenizer.from_pretrained(model_name)
+
+tokenizer=AutoTokenizer.from_pretrained(model_name),
 
 SYSTEM_PROMPT = """
 You are an autonomous algorithmic trading decision agent. Your job is to analyze the user's current stock portfolio, available buying power, and real-time internet news to generate actionable trade orders.
@@ -58,34 +62,32 @@ My portfolio positions are the following:
 {trading_client.get_all_positions()}
 """
 
+agent = CodeAgent(model=model, 
+                  tools=[WebSearchTool(), VisitWebpageTool()], 
+                  instructions=SYSTEM_PROMPT,
+                  max_steps=3
+                  )
+
 def generate_answer():
+    current_positions = trading_client.get_all_positions()
+    prompt_positions = [{
+        "symbol": pos.symbol,
+        "qty": pos.qty,
+        "qty_available": pos.qty_available,
+        "current_price": pos.current_price,
+        "change_today": pos.change_today
+    } for pos in current_positions]
+
     prompt = f"""
     The current buying power is: $ {trading_client.get_account().buying_power}
-    My portfolio is the following: {trading_client.get_all_positions()}
+    My portfolio is the following:
+    {prompt_positions}
 
     Give me options what to buy or sell!
+    Only and ONLY return a valid JSON array matching the exact schema in your instructions. Do not include markdown formatting, explanations, or extra text.
     """
 
-    messages = [
-        {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": prompt}
-    ]
-    text = tokenizer.apply_chat_template(
-        messages,
-        tokenize=False,
-        add_generation_prompt=True
-    )
-    model_inputs = tokenizer([text], return_tensors="pt").to(model.device)
-
-    generated_ids = model.generate(
-        **model_inputs,
-        max_new_tokens=512
-    )
-    generated_ids = [
-        output_ids[len(input_ids):] for input_ids, output_ids in zip(model_inputs.input_ids, generated_ids)
-    ]
-
-    response = tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
+    response = agent.run(prompt)
     
     # Abban az esetben ha mégis markdownt használna, akkor regexel kiszedjük a markdownt
     markdown_cleaned = re.sub(r"^```(?:json)?\s*|\s*```$", "", response.strip(), flags=re.IGNORECASE)
