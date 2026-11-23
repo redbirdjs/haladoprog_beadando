@@ -1,13 +1,14 @@
 from alpaca.trading import TradingClient
-from alpaca.trading.requests import GetPortfolioHistoryRequest
+from alpaca.trading.requests import GetPortfolioHistoryRequest, OrderRequest
+from alpaca.trading.enums import OrderSide, TimeInForce
 from alpaca.data.historical import StockHistoricalDataClient
 from alpaca.data.requests import StockBarsRequest
 from alpaca.data.timeframe import TimeFrame
 
 from datetime import datetime
 
-api_key = "PKFZCASF5ECECARFG374SUUXBD"
-secret_key = "3xRE5SVzfxgFHqE4zehD6ByNw9zCcwkgajKasZjcqJqJ"
+api_key = "PK723AEAIPIMLUPFUBNFJCX5FZ"
+secret_key = "F2yh4LgRFky4NQr3NHm69A3GpWUKuUziZJ1rfWysjbdD"
 
 trading_client = TradingClient(api_key, secret_key, paper=True)
 request_client = StockHistoricalDataClient(api_key, secret_key)
@@ -40,3 +41,30 @@ def get_candle_chart():
     candle_data = request_client.get_stock_bars(request_params)
 
     return candle_data
+
+def get_time_in_force(tif):
+    if (tif == 'gtc'): 
+        return TimeInForce.GTC
+    if (tif == 'otg'): 
+        return TimeInForce.OPG
+    if (tif == 'cls'): 
+        return TimeInForce.CLS
+    if (tif == 'ioc'):
+        return TimeInForce.IOC
+    if (tif == 'fok'):
+        return TimeInForce.FOK
+
+    return TimeInForce.DAY
+
+def convert_to_order(item):
+    return OrderRequest(
+        type="market",
+        symbol=item['symbol'],
+        qty=item['qty'],
+        side=OrderSide.BUY if item['side'] == 'buy' else OrderSide.SELL,
+        time_in_force=get_time_in_force(item['time_in_force'])
+    )
+
+def send_orders(orders):
+    for order in orders:
+        trading_client.submit_order(convert_to_order(order))
