@@ -84,6 +84,7 @@ def generate_answer():
     {prompt_positions}
 
     Give me options what to buy or sell!
+    Always try to suggest new opportunities, but only if there is enough buying power to afford it!
     Only and ONLY return a valid JSON array matching the exact schema in your instructions. Do not include markdown formatting, explanations, or extra text.
     """
 
