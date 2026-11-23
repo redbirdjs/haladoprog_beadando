@@ -106,10 +106,25 @@ class TheApp(App):
             yield ListView(id="stock-list", classes="with-border h-full")
 
       # AI
-      with Container(id="ai_assistant", classes="with-border w-full"):
-        yield SelectionList[int](id="ai-check-list")
-        yield Button("Execute orders", id="ai_assistant_buy_sell", variant="primary", flat=True)
-        yield Button("Re-run", id="ai_assistant_rerun", variant="default", flat=True)
+      with Vertical(id="ai_assistant", classes="with-border w-full h-full"):
+        with Horizontal(classes="h-auto mx-1"):
+          with Vertical(classes="w-full h-auto"):
+            yield Label("AI Ultra Mambo Assistant")
+          with Vertical(classes="w-auto h-auto color-ascii"):
+            yield Label("⠀⠀⠀⢀⣾⣧⠀⠀⠀⢠⣾⣆⠀⠀⠀")
+            yield Label("⠀⠀⠀⣼⣿⣿⣇⠀⠀⣾⣿⣿⡄⠀⠀")
+            yield Label("⠀⠀⢠⣿⣿⣿⣿⣤⣴⣿⣿⣿⡇⠀⠀")
+            yield Label("⠀⠀⢸⣿⡿⠛⠻⣿⣿⡿⡻⣿⡟⠀⠀")
+            yield Label("⠀⠀⢸⣿⣇⡄⢷⣿⣿⡸⠇⣸⣷⠀⠀")
+            yield Label("⠐⣒⣞⢿⣿⣿⣿⣿⣿⣿⣿⣿⠯⠭⣁")
+            yield Label("⠀⠐⠚⠉⠉⣿⣿⣿⣿⣿⠋⠉⠉⠒⠀")
+            yield Label("⠀⠀⠀⠀⣸⣿⣿⣿⣿⣿⡀⠀⠀⠀⠀")
+            yield Label("⠀⠀⠀⣰⣿⣿⣿⣿⣿⣿⡇⠀⠀⠀⠀")
+            yield Label("⠀⠀⢰⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀⠀⠀")
+        yield SelectionList[int](id="ai-check-list", classes="with-border h-auto")
+        with Horizontal(classes="h-auto"):
+          yield Button("Execute orders", id="ai_assistant_buy_sell", variant="primary", flat=True, classes="ml-2")
+          yield Button("Re-run", id="ai_assistant_rerun", variant="default", flat=True, classes="ml-1")
 
   def on_mount(self) -> None:
     self.title = "Mambo App"
