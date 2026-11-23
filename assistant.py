@@ -1,6 +1,3 @@
-from unittest import result
-
-from transformers import AutoModelForCausalLM, AutoTokenizer
 from smolagents import CodeAgent, WebSearchTool, VisitWebpageTool, TransformersModel
 from trader_client import trading_client
 import json
@@ -16,8 +13,6 @@ model = TransformersModel(
     torch_dtype="auto",
     device_map="auto"
 )
-
-tokenizer=AutoTokenizer.from_pretrained(model_name),
 
 SYSTEM_PROMPT = """
 You are an autonomous algorithmic trading decision agent. Your job is to analyze the user's current stock portfolio, available buying power, and real-time internet news to generate actionable trade orders.
