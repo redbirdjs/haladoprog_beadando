@@ -48,6 +48,7 @@ class TheApp(App):
   BINDINGS = [
     Binding(key="f1", action="switch_content('home')", description="Home"),
     Binding(key="f2", action="switch_content('ai_assistant')", description="AI Assistant"),
+    Binding(key="r", action="refresh_content()", description="Refresh"),
     Binding(key="q", action="quit", description="Quit"),
   ]
 
@@ -118,9 +119,10 @@ class TheApp(App):
   def action_switch_content(self, page_name: str) -> None:
     self.query_one(ContentSwitcher).current = page_name
     self.sub_title = page_name.replace("_", " ").title()
-    self.call_after_refresh(
-      lambda: self.run_worker(self.update_page(page_name))
-    )
+
+  def action_refresh_content(self) -> None:
+    page_name = self.query_one(ContentSwitcher).current
+    self.run_worker(self.update_page(page_name))
 
   async def update_page(self, page):
     if page == 'home':
