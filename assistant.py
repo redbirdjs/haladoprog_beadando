@@ -65,7 +65,7 @@ My portfolio positions are the following:
 agent = CodeAgent(model=model, 
                   tools=[WebSearchTool(), VisitWebpageTool()], 
                   instructions=SYSTEM_PROMPT,
-                  max_steps=3
+                  max_steps=6
                   )
 
 def generate_answer():
@@ -89,11 +89,14 @@ def generate_answer():
 
     response = agent.run(prompt)
     
-    # Abban az esetben ha mégis markdownt használna, akkor regexel kiszedjük a markdownt
-    markdown_cleaned = re.sub(r"^```(?:json)?\s*|\s*```$", "", response.strip(), flags=re.IGNORECASE)
-    suggestions_list = json.loads(markdown_cleaned)
+    # Ha az AI szöveget vagy markdownt ad vissza, átalakítjuk felhasználható formába
+    if type(response) != list:
+        markdown_cleaned = re.sub(r"^```(?:json)?\s*|\s*```$", "", response.strip(), flags=re.IGNORECASE)
+        suggestions_list = json.loads(markdown_cleaned)
 
-    if len(suggestions_list) == 0:
-        return []
+        if len(suggestions_list) == 0:
+            return []
 
-    return suggestions_list
+        return suggestions_list
+
+    return response
