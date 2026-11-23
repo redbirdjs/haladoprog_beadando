@@ -21,10 +21,12 @@ if __name__ == "__main__":
 
 from textual.binding import Binding
 from textual.containers import Container, Horizontal, Vertical
-from textual.widgets import Header, Footer, Static, ContentSwitcher, Sparkline, Label, ListItem, ListView, Button
+from textual.widgets import Header, Footer, ContentSwitcher, Sparkline, Label, ListItem, ListView, Button, SelectionList
 
 from charts import Chart, candlestick
 from trader_client import trading_client, portfolio_history, candle_data, market_data
+
+from assistant import generate_answer
 
 
 indicator = {
@@ -45,13 +47,14 @@ class TheApp(App):
   CSS_PATH = "style.tcss"
   BINDINGS = [
     Binding(key="f1", action="switch_content('home')", description="Home"),
-    Binding(key="f2", action="switch_content('something')", description="Something"),
+    Binding(key="f2", action="switch_content('ai_assistant')", description="AI Assistant"),
     Binding(key="q", action="quit", description="Quit"),
   ]
 
   account = trading_client.get_account()
   portfolio = trading_client.get_all_positions()
   assets = []
+  ai_results = []
 
   for item in portfolio:
     data = trading_client.get_asset(item.symbol)
@@ -106,6 +109,10 @@ class TheApp(App):
           with Vertical(id="right", classes="ml-1"):
             yield ListView(id="stock-list", classes="with-border h-full")
 
+      # AI
+      with Container(id="ai_assistant", classes="with-border w-full"):
+        yield SelectionList[int](id="ai-check-list")
+        yield Button("Buy/Sell", id="ai_assistant_buy_sell", variant="primary", flat=True)
 
   def on_mount(self) -> None:
     self.title = "Mambo App"
@@ -139,11 +146,50 @@ class TheApp(App):
         )
       return
 
+    if page == "ai_assistant":
+      if len(self.ai_results) > 0:
+        return
+
+      self.ai_results = generate_answer()
+      # self.ai_results = [
+      #   {
+      #     "symbol": "string",
+      #     "qty": 0,
+      #     "side": "buy",
+      #     "time_in_force": "day",
+      #     "reason": "string"
+      #   }
+      # ]
+
+      selection_list = self.query_one("#ai-check-list", SelectionList)
+      selection_list.clear_options()
+
+      for index, item in enumerate(self.ai_results):
+        selection_list.add_option((
+          f"{item['symbol'].ljust(4, " ")} {item['side'].upper()}\tQuantity: {item['qty']}\tReason: {item['reason']}",
+          index
+        ))
+      return
 
   def on_button_pressed(self, event: Button.Pressed) -> None:
     if event.button.id == "ai_assistant_button":
       self.action_switch_content('ai_assistant')
       return
+
+    if event.button.id == "ai_assistant_buy_sell":
+      self.action_buy_sell_stocks()
+      return
+
+  def action_buy_sell_stocks(self) -> None:
+    selection_list = self.query_one("#ai-check-list", SelectionList)
+    with open("debug.txt", "w") as file:
+      for index in selection_list.selected:
+        file.write(self.ai_results[index].__str__())
+        file.write("\n")
+
+    self.ai_results = []
+    self.action_switch_content('home')
+
   def on_list_view_highlighted(self, event: ListView.Highlighted) -> None:
     if event.list_view.id != "stock-list":
       return
