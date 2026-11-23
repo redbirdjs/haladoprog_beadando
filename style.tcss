@@ -18,12 +18,24 @@
   margin-right: 1;
 }
 
+.mr-2 {
+  margin-right: 2;
+}
+
 .ml-1 {
   margin-left: 1;
 }
 
+.ml-2 {
+  margin-left: 2;
+}
+
+.mx-1 {
+  margin: 0 1;
+}
+
 .with-border {
-  border: round white 50%;
+  border: round $foreground 50%;
 }
 
 .text-center {
@@ -32,10 +44,10 @@
 
 
 .sparkline--max-color {
-    color: $success;
+  color: $success;
 }
 .sparkline--min-color {
-    color: $error 50%;
+  color: $error 50%;
 }
 
 
@@ -44,6 +56,11 @@
 }
 .value.down {
   color: $error;
+}
+
+
+.color-ascii {
+  color: $foreground 50%;
 }
 
 
@@ -61,4 +78,14 @@
   text-style: bold;
   color: $foreground;
   background: $panel;
+}
+
+Button {
+  color: $foreground;
+}
+
+SelectionList {
+  margin: 0 1;
+  padding: 1 2;
+  background: transparent;
 }
