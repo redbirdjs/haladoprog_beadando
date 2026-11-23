@@ -9,7 +9,7 @@ from datetime import datetime
 from env import api_key, api_secret
 
 trading_client = TradingClient(api_key, api_secret, paper=True)
-request_client = StockHistoricalDataClient(api_key, secret_key)
+request_client = StockHistoricalDataClient(api_key, api_secret)
 
 def get_market_clock():
     return trading_client.get_clock()
