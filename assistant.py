@@ -8,7 +8,7 @@ import re
 # Agent létrehozva
 # TODO: agent és prompt pontosítása, hogy csak a szükséges adatokat adja vissza az AI
 
-model_name = "Qwen/Qwen2.5-0.5B-Instruct"
+model_name = "Qwen/Qwen3-4B-Instruct-2507"
 
 model = AutoModelForCausalLM.from_pretrained(
     model_name,
@@ -38,7 +38,7 @@ You are an autonomous algorithmic trading decision agent. Your job is to analyze
 - `qty`: Positive number representing share quantity.
 - `side`: Strictly `"buy"` or `"sell"`.
 - `time_in_force`: Strictly one of `"day"`, `"gtc"`, `"opg"`, `"cls"`, `"ioc"`, `"fok"`.
-- `reason`: A very short, single-sentence explanation (max 15-20 words) in Hungarian explaining why this trade makes sense based on the news or portfolio state.
+- `reason`: A very short, single-sentence explanation (max 15-20 words) explaining why this trade makes sense based on the news or portfolio state.
 
 ### OUTPUT SCHEMA
 [
@@ -52,38 +52,55 @@ You are an autonomous algorithmic trading decision agent. Your job is to analyze
 ]
 """
 
-prompt = f"""
+"""
+EXAMPLE PROMPT
 The current buying power is 0$.
 If my buying power can't afford the stocks, give me some sell options!
 My portfolio positions are the following:
 {trading_client.get_all_positions()}
 """
-messages = [
-    {"role": "system", "content": SYSTEM_PROMPT},
-    {"role": "user", "content": prompt}
-]
-text = tokenizer.apply_chat_template(
-    messages,
-    tokenize=False,
-    add_generation_prompt=True
-)
-model_inputs = tokenizer([text], return_tensors="pt").to(model.device)
 
-generated_ids = model.generate(
-    **model_inputs,
-    max_new_tokens=512
-)
-generated_ids = [
-    output_ids[len(input_ids):] for input_ids, output_ids in zip(model_inputs.input_ids, generated_ids)
-]
+def generate_answer(prompt: str):
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": prompt}
+    ]
+    text = tokenizer.apply_chat_template(
+        messages,
+        tokenize=False,
+        add_generation_prompt=True
+    )
+    model_inputs = tokenizer([text], return_tensors="pt").to(model.device)
 
-response = tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
+    generated_ids = model.generate(
+        **model_inputs,
+        max_new_tokens=512
+    )
+    generated_ids = [
+        output_ids[len(input_ids):] for input_ids, output_ids in zip(model_inputs.input_ids, generated_ids)
+    ]
 
-markdown_cleaned = re.sub(r"^```(?:json)?\s*|\s*```$", "", response.strip(), flags=re.IGNORECASE)
-suggestions_list = json.loads(markdown_cleaned)
+    response = tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
 
-print(suggestions_list)
-print(len(suggestions_list))
+    print(f"Response: {response}")
+
+    markdown_cleaned = re.sub(r"^```(?:json)?\s*|\s*```$", "", response.strip(), flags=re.IGNORECASE)
+    suggestions_list = json.loads(markdown_cleaned)
+
+    if len(suggestions_list) == 0:
+        return []
+
+    options = []
+    for item in suggestions_list:
+        options.append(OrderRequest(
+            type="market",
+            symbol=item['symbol'],
+            qty=item['qty'],
+            side=OrderSide.BUY if item['side'] == 'buy' else OrderSide.SELL,
+            time_in_force=getTimeInForce(item['time_in_force'])
+        ))
+
+    return options
 
 def getTimeInForce(tif):
     if (tif == 'gtc'): 
@@ -99,12 +116,12 @@ def getTimeInForce(tif):
 
     return TimeInForce.DAY
 
-for item in suggestions_list:
-    data = OrderRequest(
-        type="market",
-        symbol=item['symbol'],
-        qty=item['qty'],
-        side=OrderSide.BUY if item['side'] == 'buy' else OrderSide.SELL,
-        time_in_force=getTimeInForce(item['time_in_force'])
-    )
-    print(data)
+
+prompt = f"""
+The current buying power is: {trading_client.get_account().buying_power}
+My portfolio is the following: {trading_client.get_all_positions()}
+
+Give me some advice which stocks should I buy or sell!
+"""
+answer = generate_answer(prompt)
+print(answer)

@@ -31,5 +31,6 @@ request_params = StockBarsRequest(
     timeframe=TimeFrame.Minute,
     start=datetime(datetime.now().year, datetime.now().month, datetime.now().day-1, 16)
 )
-
-candle_data = request_client.get_stock_bars(request_params)
+candle_data = []
+if len(symbols) > 0:
+    candle_data = request_client.get_stock_bars(request_params)
