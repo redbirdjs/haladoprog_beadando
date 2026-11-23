@@ -27,7 +27,6 @@ from charts import Chart, candlestick
 from trader_client import trading_client, get_portfolio_history, get_candle_chart, get_market_clock, send_orders
 
 from assistant import generate_answer
-from random import randrange
 
 
 indicator = {
@@ -108,7 +107,8 @@ class TheApp(App):
       # AI
       with Container(id="ai_assistant", classes="with-border w-full"):
         yield SelectionList[int](id="ai-check-list")
-        yield Button("Buy/Sell", id="ai_assistant_buy_sell", variant="primary", flat=True)
+        yield Button("Execute orders", id="ai_assistant_buy_sell", variant="primary", flat=True)
+        yield Button("Re-run", id="ai_assistant_rerun", variant="default", flat=True)
 
   def on_mount(self) -> None:
     self.title = "Mambo App"
@@ -118,7 +118,9 @@ class TheApp(App):
   def action_switch_content(self, page_name: str) -> None:
     self.query_one(ContentSwitcher).current = page_name
     self.sub_title = page_name.replace("_", " ").title()
-    self.run_worker(self.update_page(page_name))
+    self.call_after_refresh(
+      lambda: self.run_worker(self.update_page(page_name))
+    )
 
   async def update_page(self, page):
     if page == 'home':
