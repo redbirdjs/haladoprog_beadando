@@ -81,9 +81,8 @@ def generate_answer(prompt: str):
     ]
 
     response = tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
-
-    print(f"Response: {response}")
-
+    
+    # Abban az esetben ha mégis markdownt használna, akkor regexel kiszedjük a markdownt
     markdown_cleaned = re.sub(r"^```(?:json)?\s*|\s*```$", "", response.strip(), flags=re.IGNORECASE)
     suggestions_list = json.loads(markdown_cleaned)
 
