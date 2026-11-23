@@ -58,7 +58,14 @@ My portfolio positions are the following:
 {trading_client.get_all_positions()}
 """
 
-def generate_answer(prompt: str):
+def generate_answer():
+    prompt = f"""
+    The current buying power is: $ {trading_client.get_account().buying_power}
+    My portfolio is the following: {trading_client.get_all_positions()}
+
+    Give me options what to buy or sell!
+    """
+
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": prompt}
@@ -88,13 +95,3 @@ def generate_answer(prompt: str):
         return []
 
     return suggestions_list
-
-
-prompt = f"""
-The current buying power is: $ {trading_client.get_account().buying_power}
-My portfolio is the following: {trading_client.get_all_positions()}
-
-Give me some advice which stocks should I buy or sell!
-"""
-answer = generate_answer(prompt)
-print(answer)
