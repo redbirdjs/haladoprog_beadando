@@ -6,11 +6,9 @@ from alpaca.data.requests import StockBarsRequest
 from alpaca.data.timeframe import TimeFrame
 
 from datetime import datetime
+from env import api_key, api_secret
 
-api_key = "PK723AEAIPIMLUPFUBNFJCX5FZ"
-secret_key = "F2yh4LgRFky4NQr3NHm69A3GpWUKuUziZJ1rfWysjbdD"
-
-trading_client = TradingClient(api_key, secret_key, paper=True)
+trading_client = TradingClient(api_key, api_secret, paper=True)
 request_client = StockHistoricalDataClient(api_key, secret_key)
 
 def get_market_clock():
