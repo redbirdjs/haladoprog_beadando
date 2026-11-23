@@ -24,9 +24,10 @@ from textual.containers import Container, Horizontal, Vertical
 from textual.widgets import Header, Footer, ContentSwitcher, Sparkline, Label, ListItem, ListView, Button, SelectionList
 
 from charts import Chart, candlestick
-from trader_client import trading_client, portfolio_history, candle_data, market_data
+from trader_client import trading_client, get_portfolio_history, get_candle_chart, get_market_clock, send_orders
 
 from assistant import generate_answer
+from random import randrange
 
 
 indicator = {
@@ -53,18 +54,13 @@ class TheApp(App):
 
   account = trading_client.get_account()
   portfolio = trading_client.get_all_positions()
+  portfolio_history = get_portfolio_history()
+  market_clock = get_market_clock()
+  candle_data = get_candle_chart()
+  index = 0
+
   assets = []
   ai_results = []
-
-  for item in portfolio:
-    data = trading_client.get_asset(item.symbol)
-    
-    assets.append({
-      "symbol": item.symbol,
-      "name": data.name,
-      "current_price": item.current_price,
-      "quantity": item.qty
-    })
 
   def compose(self) -> ComposeResult:
     yield Header()
@@ -82,12 +78,12 @@ class TheApp(App):
                   yield Label(f"Account number: {self.account.account_number}")
                   with Horizontal(classes="h-auto"):
                     yield Label("Portfolio value: ")
-                    trend = get_trend(float(self.account.portfolio_value), float(portfolio_history.equity[0]))
+                    trend = get_trend(float(self.account.portfolio_value), float(self.portfolio_history.equity[0]))
                     yield Label(f"{indicator[trend]} [b]${float(self.account.portfolio_value):.2f}[/b]", classes=f"value {trend}".strip())
                   with Horizontal():
                     yield Button("AI Assistant", id="ai_assistant_button", variant="primary", flat=True)
                   with Horizontal():
-                    yield Label(f"The market is currently {'open!' if market_data.is_open else '[u]closed![/u]'}")
+                    yield Label(f"The market is currently {'open!' if self.market_clock.is_open else '[u]closed![/u]'}")
                 with Vertical(classes="w-auto mr-1"):
                   yield Label("      ::::::::      ")
                   yield Label("   ::::::::::::::   ")
@@ -100,7 +96,7 @@ class TheApp(App):
                   yield Label("  :::::      ::::   ")
                   yield Label("     ::      ::     ")
               yield Label(f"[b]Balance[/b][dim] - [i]Last 24h[/i][/dim]", classes="w-full text-center")
-              yield Sparkline(portfolio_history.equity, summary_function=max, classes="h-full")
+              yield Sparkline(self.portfolio_history.equity, summary_function=max, classes="h-full")
 
             with Container(id="stock-chart-container", classes="with-border h-full"):
               yield Label(id="stock-title", classes="w-full text-center", content="")
@@ -122,17 +118,30 @@ class TheApp(App):
   def action_switch_content(self, page_name: str) -> None:
     self.query_one(ContentSwitcher).current = page_name
     self.sub_title = page_name.replace("_", " ").title()
-    self.run_worker(self.update_page())
+    self.run_worker(self.update_page(page_name))
 
-  async def update_page(self):
-    page = self.query_one(ContentSwitcher).current
-
+  async def update_page(self, page):
     if page == 'home':
       list_view = self.query_one("#stock-list", ListView)
       await list_view.clear()
 
+      self.assets = []
+      for item in self.portfolio:
+        data = trading_client.get_asset(item.symbol)
+        
+        self.assets.append({
+          "symbol": item.symbol,
+          "name": data.name,
+          "current_price": item.current_price,
+          "quantity": item.qty
+        })
+
+      self.account = trading_client.get_account()
+      self.portfolio = trading_client.get_all_positions()
+      self.candle_data = get_candle_chart()
+
       for item in self.assets:
-        data = candle_data[item['symbol']]
+        data = self.candle_data[item['symbol']]
         trend = get_trend(float(data[-1].close), float(data[-1].open))
 
         list_view.append(
@@ -182,24 +191,25 @@ class TheApp(App):
 
   def action_buy_sell_stocks(self) -> None:
     selection_list = self.query_one("#ai-check-list", SelectionList)
-    with open("debug.txt", "w") as file:
-      for index in selection_list.selected:
-        file.write(self.ai_results[index].__str__())
-        file.write("\n")
+    selected_items = [self.ai_results[index] for index in selection_list.selected]
+    send_orders(selected_items)
 
     self.ai_results = []
     self.action_switch_content('home')
 
   def on_list_view_highlighted(self, event: ListView.Highlighted) -> None:
-    if event.list_view.id != "stock-list":
+    if event.item == None or event.list_view.id != "stock-list":
       return
 
     title = self.query_one("#stock-title")
     asset = next((x for x in self.assets if x["symbol"] == event.item.id), None)
+    if asset == None: 
+      return
+
     title.content = f"[b]{asset['symbol']}[/b] [dim]{asset['name']} - [i]Current price: ${asset['current_price']}[/i][/dim]"
 
     chart = self.query_one("#stock-chart")
-    chart.data = candle_data[event.item.id]
+    chart.data = self.candle_data[event.item.id]
 
     chart.refresh_chart()
 
