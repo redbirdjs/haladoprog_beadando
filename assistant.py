@@ -1,7 +1,5 @@
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from trader_client import trading_client
-from alpaca.trading.enums import OrderSide, TimeInForce
-from alpaca.trading.requests import OrderRequest
 import json
 import re
 
@@ -89,35 +87,11 @@ def generate_answer(prompt: str):
     if len(suggestions_list) == 0:
         return []
 
-    options = []
-    for item in suggestions_list:
-        options.append(OrderRequest(
-            type="market",
-            symbol=item['symbol'],
-            qty=item['qty'],
-            side=OrderSide.BUY if item['side'] == 'buy' else OrderSide.SELL,
-            time_in_force=getTimeInForce(item['time_in_force'])
-        ))
-
-    return options
-
-def getTimeInForce(tif):
-    if (tif == 'gtc'): 
-        return TimeInForce.GTC
-    if (tif == 'otg'): 
-        return TimeInForce.OPG
-    if (tif == 'cls'): 
-        return TimeInForce.CLS
-    if (tif == 'ioc'):
-        return TimeInForce.IOC
-    if (tif == 'fok'):
-        return TimeInForce.FOK
-
-    return TimeInForce.DAY
+    return suggestions_list
 
 
 prompt = f"""
-The current buying power is: {trading_client.get_account().buying_power}
+The current buying power is: $ {trading_client.get_account().buying_power}
 My portfolio is the following: {trading_client.get_all_positions()}
 
 Give me some advice which stocks should I buy or sell!
