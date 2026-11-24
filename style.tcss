@@ -89,3 +89,11 @@ SelectionList {
   padding: 1 2;
   background: transparent;
 }
+
+#orders {
+  align: center top;
+}
+
+#orders-datatable {
+  width: auto
+}

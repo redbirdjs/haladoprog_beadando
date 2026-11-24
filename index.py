@@ -21,10 +21,10 @@ if __name__ == "__main__":
 
 from textual.binding import Binding
 from textual.containers import Container, Horizontal, Vertical
-from textual.widgets import Header, Footer, ContentSwitcher, Sparkline, Label, ListItem, ListView, Button, SelectionList
+from textual.widgets import Header, Footer, ContentSwitcher, Sparkline, Label, ListItem, ListView, Button, SelectionList, DataTable
 
 from charts import Chart, candlestick
-from trader_client import trading_client, get_portfolio_history, get_candle_chart, get_market_clock, send_orders
+from trader_client import trading_client, get_portfolio_history, get_candle_chart, get_market_clock, send_orders, get_all_orders
 
 from assistant import generate_answer
 
@@ -48,6 +48,7 @@ class TheApp(App):
   BINDINGS = [
     Binding(key="f1", action="switch_content('home')", description="Home"),
     Binding(key="f2", action="switch_content('ai_assistant')", description="AI Assistant"),
+    Binding(key="f3", action="switch_content('orders')", description="Orders"),
     Binding(key="r", action="refresh_content()", description="Refresh"),
     Binding(key="q", action="quit", description="Quit"),
   ]
@@ -96,7 +97,7 @@ class TheApp(App):
                   yield Label("  :::::      ::::   ")
                   yield Label("     ::      ::     ")
               yield Label(f"[b]Balance[/b][dim] - [i]Last 24h[/i][/dim]", classes="w-full text-center")
-              yield Sparkline(self.portfolio_history.equity, summary_function=max, classes="h-full")
+              yield Sparkline(self.portfolio_history.equity, summary_function=max, id="portfolio-sparkline", classes="h-full")
 
             with Container(id="stock-chart-container", classes="with-border h-full"):
               yield Label(id="stock-title", classes="w-full text-center", content="")
@@ -129,10 +130,17 @@ class TheApp(App):
           yield Button("Execute orders", id="ai_assistant_buy_sell", variant="primary", flat=True, classes="ml-2")
           yield Button("Re-run", id="ai_assistant_rerun", variant="default", flat=True, classes="ml-1")
 
+      # Orders
+      with Container(id="orders", classes="with-border"):
+        yield DataTable(id="orders-datatable", cursor_type="row", zebra_stripes=True)
+
   def on_mount(self) -> None:
     self.title = "Mambo App"
     self.sub_title = "Home"
     self.action_switch_content('home')
+
+    datatable = self.query_one("#orders-datatable", DataTable)
+    datatable.add_columns("Symbol", "Quantity", "Buy/Sell", "Status", "Created at", "Expires at")
 
   def action_switch_content(self, page_name: str) -> None:
     self.query_one(ContentSwitcher).current = page_name
@@ -158,6 +166,9 @@ class TheApp(App):
       
       self.call_after_refresh(lambda: self.update_ai_answer())
       return
+
+    if page == "orders":
+      self.call_after_refresh(lambda: self.update_orders())
 
   async def update_home_data(self):
     self.account = trading_client.get_account()
@@ -237,6 +248,13 @@ class TheApp(App):
       ))
 
     selection_list.border_title = "Available options"
+
+  async def update_orders(self):
+    datatable = self.query_one("#orders-datatable", DataTable)
+    datatable.clear()
+
+    data = get_all_orders(return_tuple=True)
+    datatable.add_rows(data)
 
   def on_button_pressed(self, event: Button.Pressed) -> None:
     if event.button.id == "ai_assistant_button":
