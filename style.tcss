@@ -95,5 +95,5 @@ SelectionList {
 }
 
 #orders-datatable {
-  width: auto
+  width: auto;
 }

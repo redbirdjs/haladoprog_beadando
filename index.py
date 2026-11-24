@@ -140,7 +140,7 @@ class TheApp(App):
     self.action_switch_content('home')
 
     datatable = self.query_one("#orders-datatable", DataTable)
-    datatable.add_columns("Symbol", "Quantity", "Buy/Sell", "Status", "Created at", "Expires at")
+    datatable.add_columns("Symbol      ", "Quantity      ", "Buy/Sell      ", "Status      ", "Created at              ", "Expires at              ")
 
   def action_switch_content(self, page_name: str) -> None:
     self.query_one(ContentSwitcher).current = page_name
@@ -253,8 +253,26 @@ class TheApp(App):
     datatable = self.query_one("#orders-datatable", DataTable)
     datatable.clear()
 
-    data = get_all_orders(return_tuple=True)
-    datatable.add_rows(data)
+    data = get_all_orders()
+
+    success_color = self.app.theme_variables["success"]
+    error_color = self.app.theme_variables["error"]
+
+    table_data = []
+    for item in data:
+      color = success_color if item['side'] == 'buy' else error_color
+      item['side'] = f"[{color}]{item['side'].upper()}[/{color}]"
+      item['status'] = item['status'].upper()
+      table_data.append((
+        item['symbol'],
+        item['qty'],
+        item['side'],
+        item['status'],
+        item['created_at'],
+        item['expires_at'],
+      ))
+
+    datatable.add_rows(table_data)
 
   def on_button_pressed(self, event: Button.Pressed) -> None:
     if event.button.id == "ai_assistant_button":
