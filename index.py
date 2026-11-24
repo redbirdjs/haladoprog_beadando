@@ -79,11 +79,11 @@ class TheApp(App):
                   with Horizontal(classes="h-auto"):
                     yield Label("Portfolio value: ")
                     trend = get_trend(float(self.account.portfolio_value), float(self.portfolio_history.equity[0]))
-                    yield Label(f"{indicator[trend]} [b]${float(self.account.portfolio_value):.2f}[/b]", classes=f"value {trend}".strip())
+                    yield Label(f"{indicator[trend]} [b]${float(self.account.portfolio_value):.2f}[/b]", id="portfolio-value", classes=f"value {trend}".strip())
                   with Horizontal():
                     yield Button("AI Assistant", id="ai_assistant_button", variant="primary", flat=True)
                   with Horizontal():
-                    yield Label(f"The market is currently {'open!' if self.market_clock.is_open else '[u]closed![/u]'}")
+                    yield Label(f"The market is currently {'open!' if self.market_clock.is_open else '[u]closed![/u]'}", id="market-status")
                 with Vertical(classes="w-auto mr-1"):
                   yield Label("      ::::::::      ")
                   yield Label("   ::::::::::::::   ")
@@ -103,7 +103,10 @@ class TheApp(App):
               yield Chart(id="stock-chart", classes="h-full", data=None, get_chart_str=candlestick)
           
           with Vertical(id="right", classes="ml-1"):
-            yield ListView(id="stock-list", classes="with-border h-full")
+            yield ListView(
+              ListItem(Label("Loading...", classes="ml-1"), disabled=True),
+              id="stock-list", classes="with-border h-full"
+            )
 
       # AI
       with Vertical(id="ai_assistant", classes="with-border w-full h-full"):
@@ -141,12 +144,7 @@ class TheApp(App):
     self.run_worker(self.update_page(page_name))
 
   async def update_page(self, page):
-    if page == 'home':
-      list_view = self.query_one("#stock-list", ListView)
-      await list_view.clear()
-
-      list_view.append(ListItem(Label("Loading...", classes="ml-1"), disabled=True))
-
+    if page == "home":
       self.call_after_refresh(lambda: self.update_home_data())
       return
 
@@ -162,6 +160,30 @@ class TheApp(App):
       return
 
   async def update_home_data(self):
+    self.account = trading_client.get_account()
+    self.portfolio = trading_client.get_all_positions()
+    self.portfolio_history = get_portfolio_history()
+    self.market_clock = get_market_clock()
+    self.candle_data = get_candle_chart()
+
+
+    # Portfolio Value
+    portfolio_value_label = self.query_one("#portfolio-value", Label)
+    trend = get_trend(float(self.account.portfolio_value), float(self.portfolio_history.equity[0]))
+    portfolio_value_label.content = f"{indicator[trend]} [b]${float(self.account.portfolio_value):.2f}[/b]"
+
+
+    # Balance Chart
+    sparkline = self.query_one("#portfolio-sparkline", Sparkline)
+    sparkline.data = self.portfolio_history.equity
+
+
+    # Market Label
+    market_label = self.query_one("#market-status", Label)
+    market_label.content = f"The market is currently {'open!' if self.market_clock.is_open else '[u]closed![/u]'}"
+
+
+    # Stock List
     list_view = self.query_one("#stock-list", ListView)
     await list_view.clear()
 
@@ -175,10 +197,6 @@ class TheApp(App):
         "current_price": item.current_price,
         "quantity": item.qty
       })
-
-    self.account = trading_client.get_account()
-    self.portfolio = trading_client.get_all_positions()
-    self.candle_data = get_candle_chart()
 
     for item in self.assets:
       data = self.candle_data[item['symbol']]
@@ -198,6 +216,7 @@ class TheApp(App):
     selection_list = self.query_one("#ai-check-list", SelectionList)
     selection_list.clear_options()
 
+    # self.ai_results = []
     self.ai_results = generate_answer()
 
     if len(self.ai_results) == 0:
