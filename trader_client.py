@@ -4,6 +4,7 @@ from alpaca.trading.enums import OrderSide, TimeInForce, QueryOrderStatus
 from alpaca.data.historical import StockHistoricalDataClient
 from alpaca.data.requests import StockBarsRequest
 from alpaca.data.timeframe import TimeFrame
+from datetime import datetime
 
 from datetime import datetime
 from env import api_key, api_secret
@@ -77,7 +78,7 @@ def get_all_orders(limit=250, return_tuple=False):
 
     if return_tuple:
         return [(
-            order.symbol, order.qty, order.side.value, order.status.value, order.created_at.isoformat(), order.expires_at.isoformat() if order.expires_at else None
+            order.symbol, order.qty, order.side.value, order.status.value, datetime(order.created_at.isoformat()).strftime("%Y-%m-%d | %H:%M:%S"), datetime(order.expires_at.isoformat()).strftime("%Y-%m-%d | %H:%M:%S") if order.expires_at else None
         ) for order in orders]
 
     return [{
