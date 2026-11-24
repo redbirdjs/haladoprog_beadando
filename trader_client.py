@@ -1,6 +1,6 @@
 from alpaca.trading import TradingClient
-from alpaca.trading.requests import GetPortfolioHistoryRequest, OrderRequest
-from alpaca.trading.enums import OrderSide, TimeInForce
+from alpaca.trading.requests import GetPortfolioHistoryRequest, OrderRequest, GetOrdersRequest
+from alpaca.trading.enums import OrderSide, TimeInForce, QueryOrderStatus
 from alpaca.data.historical import StockHistoricalDataClient
 from alpaca.data.requests import StockBarsRequest
 from alpaca.data.timeframe import TimeFrame
@@ -66,3 +66,20 @@ def convert_to_order(item):
 def send_orders(orders):
     for order in orders:
         trading_client.submit_order(convert_to_order(order))
+
+def get_all_orders(limit=250):
+    request = GetOrdersRequest(
+        status=QueryOrderStatus.ALL,
+        limit=limit,
+        nested=True
+    )
+    orders = trading_client.get_orders(filter=request)
+
+    return [{
+        "symbol": order.symbol,
+        "qty": order.qty,
+        "side": order.side.value,
+        "status": order.status.value,
+        "created_at": order.created_at.isoformat(),
+        "expires_at": order.expires_at.isoformat() if order.expires_at else None,
+    } for order in orders]
