@@ -78,6 +78,7 @@ def generate_answer():
     Give me options what to buy or sell!
     Always try to suggest new opportunities, but only if there is enough buying power to afford it!
     Only and ONLY return a valid JSON array matching the exact schema in your instructions. Do not include markdown formatting, explanations, or extra text.
+    In the reason give me a link to an article or news source that supports your suggestion. If you can't find any, just say "No news found".
     """
 
     response = agent.run(prompt)
