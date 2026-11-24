@@ -3,9 +3,6 @@ from trader_client import trading_client
 import json
 import re
 
-# Agent létrehozva
-# TODO: agent és prompt pontosítása, hogy csak a szükséges adatokat adja vissza az AI
-
 model_name = "Qwen/Qwen3-4B-Instruct-2507"
 
 model = TransformersModel(

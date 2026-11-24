@@ -6,7 +6,6 @@ from alpaca.data.requests import StockBarsRequest
 from alpaca.data.timeframe import TimeFrame
 from datetime import datetime
 
-from datetime import datetime
 from env import api_key, api_secret
 
 trading_client = TradingClient(api_key, api_secret, paper=True)
@@ -78,7 +77,7 @@ def get_all_orders(limit=250, return_tuple=False):
 
     if return_tuple:
         return [(
-            order.symbol, order.qty, order.side.value, order.status.value, datetime(order.created_at.isoformat()).strftime("%Y-%m-%d | %H:%M:%S"), datetime(order.expires_at.isoformat()).strftime("%Y-%m-%d | %H:%M:%S") if order.expires_at else None
+            order.symbol, order.qty, order.side.value, order.status.value, order.created_at.strftime("%Y-%m-%d | %H:%M:%S"), order.expires_at.strftime("%Y-%m-%d | %H:%M:%S") if order.expires_at else None
         ) for order in orders]
 
     return [{
@@ -86,6 +85,6 @@ def get_all_orders(limit=250, return_tuple=False):
         "qty": order.qty,
         "side": order.side.value,
         "status": order.status.value,
-        "created_at": order.created_at.isoformat(),
-        "expires_at": order.expires_at.isoformat() if order.expires_at else None,
+        "created_at": order.created_at.strftime("%Y-%m-%d | %H:%M:%S"),
+        "expires_at": order.expires_at.strftime("%Y-%m-%d | %H:%M:%S") if order.expires_at else None,
     } for order in orders]
