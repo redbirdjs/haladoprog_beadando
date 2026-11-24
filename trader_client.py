@@ -67,13 +67,18 @@ def send_orders(orders):
     for order in orders:
         trading_client.submit_order(convert_to_order(order))
 
-def get_all_orders(limit=250):
+def get_all_orders(limit=250, return_tuple=False):
     request = GetOrdersRequest(
         status=QueryOrderStatus.ALL,
         limit=limit,
         nested=True
     )
     orders = trading_client.get_orders(filter=request)
+
+    if return_tuple:
+        return [(
+            order.symbol, order.qty, order.side.value, order.status.value, order.created_at.isoformat(), order.expires_at.isoformat() if order.expires_at else None
+        ) for order in orders]
 
     return [{
         "symbol": order.symbol,
