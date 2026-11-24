@@ -239,11 +239,10 @@ class TheApp(App):
 
     max_qty_len = max([len(str(x['qty'])) for x in self.ai_results])
 
-    from rich.text import Text
     for index, item in enumerate(self.ai_results):
       color = success_color if item['side'] == 'buy' else error_color
       selection_list.add_option((
-        Text.from_markup(f"[b]{item['symbol'].ljust(4, " ")} [{color}]{item['side'].upper().ljust(4, " ")}[/{color}][/b] {" "*4} [dim]Quantity: [/dim]{str(item['qty']).rjust(max_qty_len, " ")} {" "*4} [dim]Reason: [i]{item['reason']}[/i][/dim]"),
+        f"[b]{item['symbol'].ljust(4, " ")} [{color}]{item['side'].upper().ljust(4, " ")}[/{color}][/b] {" "*4} [dim]Quantity: [/dim]{str(item['qty']).rjust(max_qty_len, " ")} {" "*4} [dim]Reason: [i]{item['reason']}[/i][/dim]",
         index
       ))
 
